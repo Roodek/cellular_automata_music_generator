@@ -33,9 +33,8 @@ DURATIONS = [4.0, 2.0, 1.0, 0.5, 0.25, 2.0, 1.0, 0.5, 0.25]
 def get_major_pentatonic_scale(scale_name):
     scale_arr = scale_name.value
     pentatonic = [scale_arr[0] + str(DEFAULT_OCTAVE), scale_arr[1] + str(DEFAULT_OCTAVE),
-                  scale_arr[2] + str(DEFAULT_OCTAVE),
-                  scale_arr[4] + str(DEFAULT_OCTAVE), scale_arr[5] + str(DEFAULT_OCTAVE),
-                  scale_arr[0] + str(DEFAULT_OCTAVE + 1)]
+                  scale_arr[2] + str(DEFAULT_OCTAVE), scale_arr[4] + str(DEFAULT_OCTAVE),
+                  scale_arr[5] + str(DEFAULT_OCTAVE),scale_arr[0] + str(DEFAULT_OCTAVE + 1)]
     return pentatonic
 
 
@@ -95,13 +94,11 @@ if __name__ == '__main__':
               [1, 1, 0, 0, 1, 1, 0, 0, 1]]
     stream1=stream.Stream()
     for i in range(0,len(matrix),3):
-        print('next decoded row:')
         for j in range(0,len(matrix[i]),3):
             val =[[str(matrix[i][j]),str(matrix[i][j+1]),str(matrix[i][j+2])],
                   [str(matrix[i+1][j]),str(matrix[i+1][j+1]),str(matrix[i+1][j+2])],
                   [str(matrix[i+2][j]),str(matrix[i+2][j+1]),str(matrix[i+2][j+2])]]
-            decoded_mask=decode_mask(val)
-            print("next note")
+            decoded_mask = decode_mask(val)
             print(decoded_mask)
             stream1.append(create_note(SCALES.C_MAJOR.value[decoded_mask[0]],decoded_mask[1]))
 
