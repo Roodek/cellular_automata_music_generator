@@ -8,6 +8,8 @@ import itertools
 from IPython.display import HTML
 from music21 import *
 
+from MatrixGenerator import MatrixGenerator
+
 us = music21.environment.UserSettings()
 us['musicxmlPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
 us['musescoreDirectPNGPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
@@ -83,15 +85,20 @@ def music21demo():
 if __name__ == '__main__':
     # music21demo()
     # print(binary_to_dec('111'))
-    matrix = [[1, 1, 0, 0, 1, 1, 0, 0, 1],
-              [1, 0, 1, 0, 0, 1, 1, 0, 1],
-              [0, 1, 1, 0, 1, 1, 0, 0, 1],
-              [0, 0, 0, 1, 1, 0, 0, 1, 1],
-              [1, 1, 0, 0, 1, 0, 0, 0, 1],
-              [1, 0, 0, 0, 1, 0, 0, 0, 1],
-              [1, 1, 0, 0, 1, 1, 0, 0, 1],
-              [1, 1, 0, 0, 1, 1, 0, 0, 1],
-              [1, 1, 0, 0, 1, 1, 0, 0, 1]]
+
+    matrix_generator = MatrixGenerator((7, 7), 15, 0.2)
+    # matrix = [[1, 1, 0, 0, 1, 1, 0, 0, 1],
+    #           [1, 0, 1, 0, 0, 1, 1, 0, 1],
+    #           [0, 1, 1, 0, 1, 1, 0, 0, 1],
+    #           [0, 0, 0, 1, 1, 0, 0, 1, 1],
+    #           [1, 1, 0, 0, 1, 0, 0, 0, 1],
+    #           [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
+    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
+    #           [1, 1, 0, 0, 1, 1, 0, 0, 1]]
+
+    matrix = matrix_generator.generate_GoF_matrix("23/5")
+
     stream1=stream.Stream()
     for i in range(0,len(matrix),3):
         for j in range(0,len(matrix[i]),3):
