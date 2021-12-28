@@ -30,16 +30,18 @@ class MatrixGenerator:
         self.number_of_epochs = number_of_epochs
         self.matrix_size = matrix_size
 
-    def generate_GoF_matrix(self, rule: str) -> List[List[int]]:
+    def generate_GoF_matrices(self, rule: str) -> List[List[List[int]]]:
         (alive_rule, dead_rule) = parse_rule(rule)
         (x_size, y_size) = self.matrix_size
         grid = np.random.choice([0, 1], (x_size, y_size),
                                 p=[1 - self.initial_life_probability, self.initial_life_probability])
 
+        matrices =[]
         for _ in range(self.number_of_epochs):
             grid = self.perform_epoch(grid, alive_rule, dead_rule)
+            matrices.append(grid)
 
-        return grid
+        return matrices
 
     def perform_epoch(self, grid, alive_rule, dead_rule):
         (x_size, y_size) = self.matrix_size
