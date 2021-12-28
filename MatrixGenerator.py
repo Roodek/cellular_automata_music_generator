@@ -36,10 +36,10 @@ class MatrixGenerator:
         grid = np.random.choice([0, 1], (x_size, y_size),
                                 p=[1 - self.initial_life_probability, self.initial_life_probability])
 
-        matrices =[]
+        matrices =[grid.copy()]
         for _ in range(self.number_of_epochs):
             grid = self.perform_epoch(grid, alive_rule, dead_rule)
-            matrices.append(grid)
+            matrices.append(grid.copy())
 
         return matrices
 

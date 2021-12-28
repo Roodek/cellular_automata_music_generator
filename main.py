@@ -283,13 +283,23 @@ def parse_matrix(music_generator,matrix):
     if len(matrix) % 3 != 0 or len(matrix[0]) % 3 != 0:
         print("Matrix dimensions must be multiples of 3")
         return stream.Stream()
+    for i in range(0,len(matrix),3):
+        for j in range(0,len(matrix[i]),3):
+            val =[[str(matrix[i][j]),str(matrix[i][j+1]),str(matrix[i][j+2])],
+                  [str(matrix[i+1][j]),str(matrix[i+1][j+1]),str(matrix[i+1][j+2])],
+                  [str(matrix[i+2][j]),str(matrix[i+2][j+1]),str(matrix[i+2][j+2])]]
+            decoded_mask = decode_mask(val)
+            print(decoded_mask)
+            music_generator.append_to_stream(decoded_mask)
+
+    return music_generator
 
 
 if __name__ == '__main__':
     # music21demo()
     # print(binary_to_dec('111'))
 
-    matrix_generator = MatrixGenerator((9, 9), 15, 0.6)
+    matrix_generator = MatrixGenerator((9, 9), 15, 0.5)
     # matrix = [[1, 1, 0, 0, 1, 1, 0, 0, 1],
     #           [1, 0, 1, 0, 0, 1, 1, 0, 1],
     #           [0, 1, 1, 0, 1, 1, 0, 0, 1],
@@ -300,7 +310,7 @@ if __name__ == '__main__':
     #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
     #           [1, 1, 0, 0, 1, 1, 0, 0, 1]]
 
-    matrices = matrix_generator.generate_GoF_matrices("23/5")
+    matrices = matrix_generator.generate_GoF_matrices("2345/4")
 
     music_generator = MusicGenerator()
 
