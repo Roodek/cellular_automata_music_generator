@@ -9,6 +9,8 @@ import itertools
 from IPython.display import HTML
 from music21 import *
 
+from MatrixGenerator import MatrixGenerator
+
 us = music21.environment.UserSettings()
 us['musicxmlPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
 us['musescoreDirectPNGPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
@@ -281,39 +283,30 @@ def parse_matrix(music_generator,matrix):
     if len(matrix) % 3 != 0 or len(matrix[0]) % 3 != 0:
         print("Matrix dimensions must be multiples of 3")
         return stream.Stream()
-    for i in range(0,len(matrix),3):
-        for j in range(0,len(matrix[i]),3):
-            val =[[str(matrix[i][j]),str(matrix[i][j+1]),str(matrix[i][j+2])],
-                  [str(matrix[i+1][j]),str(matrix[i+1][j+1]),str(matrix[i+1][j+2])],
-                  [str(matrix[i+2][j]),str(matrix[i+2][j+1]),str(matrix[i+2][j+2])]]
-            decoded_mask = decode_mask(val)
-            print(decoded_mask)
-            music_generator.append_to_stream(decoded_mask)
 
-    return music_generator
-
-
-def generate_random_matrix():
-    x = []
-    for j in range(9):
-        y = []
-        for i in range(9):
-            y.append(random.randint(0, 1))
-        x.append(y)
-    return x
-
-def music_demo():
-    note.Note('G##').show()
 
 if __name__ == '__main__':
-    matrices=[generate_random_matrix(),generate_random_matrix(),generate_random_matrix()]
+    # music21demo()
+    # print(binary_to_dec('111'))
+
+    matrix_generator = MatrixGenerator((9, 9), 15, 0.6)
+    # matrix = [[1, 1, 0, 0, 1, 1, 0, 0, 1],
+    #           [1, 0, 1, 0, 0, 1, 1, 0, 1],
+    #           [0, 1, 1, 0, 1, 1, 0, 0, 1],
+    #           [0, 0, 0, 1, 1, 0, 0, 1, 1],
+    #           [1, 1, 0, 0, 1, 0, 0, 0, 1],
+    #           [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
+    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
+    #           [1, 1, 0, 0, 1, 1, 0, 0, 1]]
+
+    matrices = matrix_generator.generate_GoF_matrices("23/5")
+
     music_generator = MusicGenerator()
 
     for m in matrices:
-        parse_matrix(music_generator,m)
+        parse_matrix(music_generator, m)
     music_generator.finalize()
-
-
 
 
 
