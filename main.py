@@ -56,26 +56,6 @@ class LENGTHS(Enum):
 DURATIONS = [4.0, 2.0, 1.0, 0.5, 0.25, 2.0, 1.0, 0.5, 0.25]
 
 
-class Chords_Generator():
-    def __init__(self):
-        pass
-
-    def get_I(self,scale):
-        if len(scale)==8:
-            return [scale[0],scale[2],scale[4]]
-        return scale
-
-    def get_IV(self,scale):
-        if len(scale)==8:
-            return [scale[3],scale[5],scale[7]]
-        return scale
-
-    def get_V(self,scale):
-        if len(scale)==8:
-            return [scale[4],scale[6],scale[1]]
-        return scale
-
-
 def get_major_pentatonic_scale(scale_name):
     scale_arr = scale_name.value
     pentatonic = [scale_arr[0], scale_arr[1],
@@ -96,6 +76,45 @@ def get_minor_pentatonic_scale(scale_name):
                   scale_arr[3], scale_arr[4],
                   scale_arr[6], scale_arr[0]]
     return pentatonic
+
+class Chords_Generator():
+    def __init__(self):
+        pass
+
+    def get_I(self,scale):
+        if len(scale)==8:
+            return [scale[0],scale[2],scale[4]]
+        return scale
+
+    def get_II(self,scale):
+        if len(scale)==8:
+            return [scale[1],scale[3],scale[5]]
+        return scale
+
+    def get_III(self,scale):
+        if len(scale)==8:
+            return [scale[2],scale[4],scale[6]]
+        return scale
+
+    def get_IV(self,scale):
+        if len(scale)==8:
+            return [scale[3],scale[5],scale[7]]
+        return scale
+
+    def get_V(self,scale):
+        if len(scale)==8:
+            return [scale[4],scale[6],scale[1]]
+        return scale
+
+    def get_VI(self,scale):
+        if len(scale)==8:
+            return [scale[5],scale[7],scale[2]]
+        return scale
+
+    def get_VII(self,scale):
+        if len(scale)==8:
+            return [scale[6],scale[1],scale[3]]
+        return scale
 
 
 def binary_to_dec(binary):
@@ -118,8 +137,15 @@ def raise_by_halfstep(note):
 class MusicGenerator():
     def __init__(self):
         self.stream = stream.Stream()
+        self.part1 = stream.Part(id='part1')
+        self.part2 = stream.Part(id='part2')
+
         self.current_octave = DEFAULT_OCTAVE
         self.stream.keySignature = key.KeySignature(0)
+        self.scale = SCALES.C_MAJOR
+        self.scale_notes = SCALES.C_MAJOR.value
+        self.prev_note = None
+        self.current_chord = None
 
     def set_key_signature(self,scale):
         if scale == SCALES.G_MAJOR or scale == SCALES.E_MINOR:
@@ -152,18 +178,52 @@ class MusicGenerator():
     def set_time_signature(self):
         self.stream.timeSignature = meter.TimeSignature('4/4')
 
-    def figure_out_note(self,note_name_val,octave):
-        written_octave = octave
-        if note_name_val == 7:
-            written_octave = octave + 1
-        name = SCALES.C_MAJOR.value[note_name_val] + str(written_octave)
+    def figure_out_note(self,note_name_val):
+        if note_name_val >= len(self.scale_notes)-1 or self.current_octave == 0:
+            self.current_octave = self.current_octave + 1
+        elif note_name_val == 0 or self.current_octave == 7:
+            self.current_octave = self.current_octave - 1
+
+        major_pentatonic = get_major_pentatonic_scale(self.scale)
+        minor_pentatonic = get_minor_pentatonic_scale(self.scale)
+        pentatonic = True
+        if pentatonic:
+            name = major_pentatonic[note_name_val % 5] + str(self.current_octave)
+        else:
+            name = self.scale_notes[note_name_val] + str(self.current_octave)
         return name
 
     def figure_out_duration(self, note_length_code):
         return DURATIONS[note_length_code]
 
-    def create_note(self,note_name_val, note_length=LENGTHS.QUARTER.value, octave=DEFAULT_OCTAVE):
-        note_name = self.figure_out_note(note_name_val,octave)
+    def figure_out_chord(self,chord_code,note):
+        note_height = self.scale_notes.index(note.name)
+        chord_notes = []
+        if note_height == 0:
+            chord_notes = Chords_Generator().get_I(self.scale_notes)
+        elif note_height == 1:
+            chord_notes = Chords_Generator().get_II(self.scale_notes)
+        elif note_height == 2:
+            chord_notes = Chords_Generator().get_III(self.scale_notes)
+        elif note_height == 3:
+            chord_notes = Chords_Generator().get_IV(self.scale_notes)
+        elif note_height == 4:
+            chord_notes = Chords_Generator().get_V(self.scale_notes)
+        elif note_height == 5:
+            chord_notes = Chords_Generator().get_VI(self.scale_notes)
+        elif note_height == 6:
+            chord_notes = Chords_Generator().get_VII(self.scale_notes)
+        elif note_height == 7:
+            chord_notes = Chords_Generator().get_I(self.scale_notes)
+
+        new_chord = chord.Chord(chord_notes)
+        # if chord_code == 0:
+        #     pass
+
+        return new_chord
+
+    def create_note(self,note_name_val, note_length=LENGTHS.QUARTER.value):
+        note_name = self.figure_out_note(note_name_val)
         created_note = note.Note(note_name)
         created_note.duration.quarterLength = self.figure_out_duration(note_length)
         return created_note
@@ -173,14 +233,37 @@ class MusicGenerator():
             return DURATIONS[index]
         return LENGTHS.EIGHTH.value
 
-    def get_note_of_scale(scale,index):
-        pass
+    def get_note_of_scale(self,index):
+        return self.scale[index]
 
     def append_to_stream(self,decoded_mask):
-        new_note = self.create_note(decoded_mask[0],decoded_mask[1])
-        self.stream.append(new_note)
+        new_note = self.create_note(decoded_mask[0], decoded_mask[1])
+        if self.current_chord is None or not self.notes_from_same_chord(self.prev_note,new_note):
+            new_chord = self.figure_out_chord(decoded_mask[2],new_note)
+        else:
+            if self.current_chord:
+                new_chord = self.current_chord
+            else:
+                new_chord = self.figure_out_chord(decoded_mask[2],new_note)
+
+        new_chord.quarterLength = self.figure_out_duration(decoded_mask[1])
+        self.part1.append(new_note)
+        self.part2.append(new_chord)
+        self.prev_note = new_note
+        self.current_chord = new_chord
+
+    def notes_from_same_chord(self,prev_note,new_note):
+        if self.current_chord:
+            if prev_note in self.current_chord and new_note in self.current_chord:
+                return True
+            else:
+                return False
+        return False
 
     def finalize(self):
+        self.stream.insert(0,self.part1)
+        self.stream.insert(0, self.part2)
+
         self.stream.show()
 
 def decode_mask(mask):
@@ -223,38 +306,13 @@ def music_demo():
     note.Note('G##').show()
 
 if __name__ == '__main__':
-    # matrix = [[1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 0, 1, 0, 0, 1, 1, 0, 1],
-    #           [0, 1, 1, 0, 1, 1, 0, 0, 1],
-    #           [0, 0, 0, 1, 1, 0, 0, 1, 1],
-    #           [1, 1, 0, 0, 1, 0, 0, 0, 1],
-    #           [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1]]
-    #
-    # matrix2 = [[1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 0, 1, 0, 0, 1, 1, 0, 1],
-    #           [0, 1, 1, 0, 1, 1, 0, 0, 1],
-    #           [0, 0, 0, 1, 1, 0, 0, 1, 1],
-    #           [1, 1, 0, 0, 1, 0, 0, 0, 1],
-    #           [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1]]
-    #
-    # matrices=[generate_random_matrix(),generate_random_matrix(),generate_random_matrix()]
-    # music_generator = MusicGenerator()
-    # for m in matrices:
-    #     parse_matrix(music_generator,m)
-    # music_generator.finalize()
-    print(raise_by_halfstep('G'))
-    print(raise_by_halfstep('G#'))
-    print(raise_by_halfstep('G-'))
+    matrices=[generate_random_matrix(),generate_random_matrix(),generate_random_matrix()]
+    music_generator = MusicGenerator()
 
-    print(lower_by_halfstep('G'))
-    print(lower_by_halfstep('G#'))
-    print(lower_by_halfstep('G-'))
+    for m in matrices:
+        parse_matrix(music_generator,m)
+    music_generator.finalize()
+
 
 
 
