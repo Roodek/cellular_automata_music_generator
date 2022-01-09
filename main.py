@@ -1,19 +1,14 @@
-import random
+import os
 from enum import Enum
 
 import music21
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import itertools
-from IPython.display import HTML
 from music21 import *
 
 from MatrixGenerator import MatrixGenerator
 
 us = music21.environment.UserSettings()
-us['musicxmlPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
-us['musescoreDirectPNGPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
+us['musicxmlPath'] = "D:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
+us['musescoreDirectPNGPath'] = "D:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
 
 DEFAULT_OCTAVE = 4
 
@@ -25,7 +20,7 @@ class SCALES(Enum):
     A_MAJOR = ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#', 'A']
     E_MAJOR = ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#', 'E']
     B_MAJOR = ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#', 'B']
-    FIS_MAJOR=['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#', 'F#']
+    FIS_MAJOR = ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#', 'F#']
     F_MAJOR = ['F', 'G', 'A', 'B-', 'C', 'D', 'E', 'F']
     BFLAT_MAJOR = ['B-', 'C', 'D', 'E-', 'F', 'G', 'A', 'B-']
     EFLAT_MAJOR = ['E-', 'F', 'G', 'A-', 'B-', 'C', 'D', 'E-']
@@ -66,10 +61,10 @@ def get_major_pentatonic_scale(scale_name):
     return pentatonic
 
 
-def get_zelda_scale():
-    return [SCALES.C_MAJOR.value[1], SCALES.C_MAJOR.value[3],
-            SCALES.C_MAJOR.value[5], SCALES.C_MAJOR.value[7],
-            SCALES.C_MAJOR.value[1]]
+def get_zelda_scale(scale):
+    return [scale.value[1], scale.value[3],
+            scale.value[5], scale.value[7],
+            scale.value[1]]
 
 
 def get_minor_pentatonic_scale(scale_name):
@@ -79,54 +74,57 @@ def get_minor_pentatonic_scale(scale_name):
                   scale_arr[6], scale_arr[0]]
     return pentatonic
 
+
 class Chords_Generator():
     def __init__(self):
         pass
 
-    def get_I(self,scale):
-        if len(scale)==8:
-            return [scale[0],scale[2],scale[4]]
+    def get_I(self, scale):
+        if len(scale) == 8:
+            return [scale[0], scale[2], scale[4]]
         return scale
 
-    def get_II(self,scale):
-        if len(scale)==8:
-            return [scale[1],scale[3],scale[5]]
+    def get_II(self, scale):
+        if len(scale) == 8:
+            return [scale[1], scale[3], scale[5]]
         return scale
 
-    def get_III(self,scale):
-        if len(scale)==8:
-            return [scale[2],scale[4],scale[6]]
+    def get_III(self, scale):
+        if len(scale) == 8:
+            return [scale[2], scale[4], scale[6]]
         return scale
 
-    def get_IV(self,scale):
-        if len(scale)==8:
-            return [scale[3],scale[5],scale[7]]
+    def get_IV(self, scale):
+        if len(scale) == 8:
+            return [scale[3], scale[5], scale[7]]
         return scale
 
-    def get_V(self,scale):
-        if len(scale)==8:
-            return [scale[4],scale[6],scale[1]]
+    def get_V(self, scale):
+        if len(scale) == 8:
+            return [scale[4], scale[6], scale[1]]
         return scale
 
-    def get_VI(self,scale):
-        if len(scale)==8:
-            return [scale[5],scale[7],scale[2]]
+    def get_VI(self, scale):
+        if len(scale) == 8:
+            return [scale[5], scale[7], scale[2]]
         return scale
 
-    def get_VII(self,scale):
-        if len(scale)==8:
-            return [scale[6],scale[1],scale[3]]
+    def get_VII(self, scale):
+        if len(scale) == 8:
+            return [scale[6], scale[1], scale[3]]
         return scale
 
 
 def binary_to_dec(binary):
     return int(binary, 2)
 
+
 def lower_by_halfstep(note):
-    if len(note) ==1 or note.endswith('-'):
-        return note+'-'
+    if len(note) == 1 or note.endswith('-'):
+        return note + '-'
     elif note.endswith('#'):
         return note[0]
+
 
 def raise_by_halfstep(note):
     if len(note) == 1 or note.endswith('#'):
@@ -135,21 +133,24 @@ def raise_by_halfstep(note):
         return note[0]
 
 
+class MusicGenerator:
 
-class MusicGenerator():
-    def __init__(self):
+    def __init__(self, scale, octave, is_pentatonic, pentatonic, is_zelda):
         self.stream = stream.Stream()
         self.part1 = stream.Part(id='part1')
         self.part2 = stream.Part(id='part2')
 
-        self.current_octave = DEFAULT_OCTAVE
+        self.current_octave = octave
         self.stream.keySignature = key.KeySignature(0)
-        self.scale = SCALES.C_MAJOR
-        self.scale_notes = SCALES.C_MAJOR.value
+        self.scale = scale
+        self.scale_notes = scale.value
         self.prev_note = None
         self.current_chord = None
+        self.is_pentatonic = is_pentatonic
+        self.pentatonic = pentatonic
+        self.is_zelda = is_zelda
 
-    def set_key_signature(self,scale):
+    def set_key_signature(self, scale):
         if scale == SCALES.G_MAJOR or scale == SCALES.E_MINOR:
             self.stream.keySignature = key.KeySignature(1)
         elif scale == SCALES.D_MAJOR or scale == SCALES.B_MINOR:
@@ -180,25 +181,30 @@ class MusicGenerator():
     def set_time_signature(self):
         self.stream.timeSignature = meter.TimeSignature('4/4')
 
-    def figure_out_note(self,note_name_val):
-        if note_name_val >= len(self.scale_notes)-1 or self.current_octave == 0:
+    def figure_out_note(self, note_name_val):
+        if note_name_val >= len(self.scale_notes) - 1 or self.current_octave == 0:
             self.current_octave = self.current_octave + 1
         elif note_name_val == 0 or self.current_octave == 7:
             self.current_octave = self.current_octave - 1
 
-        major_pentatonic = get_major_pentatonic_scale(self.scale)
-        minor_pentatonic = get_minor_pentatonic_scale(self.scale)
-        pentatonic = True
-        if pentatonic:
-            name = major_pentatonic[note_name_val % 5] + str(self.current_octave)
+        if self.is_zelda:
+            temp = get_zelda_scale(self.scale)
+            name = temp[note_name_val % 5] + str(self.current_octave)
+        elif self.is_pentatonic:
+            if self.pentatonic == 'major':
+                temp_pentatonic = get_major_pentatonic_scale(self.scale)
+            else:
+                temp_pentatonic = get_minor_pentatonic_scale(self.scale)
+            name = temp_pentatonic[note_name_val % 5] + str(self.current_octave)
         else:
             name = self.scale_notes[note_name_val] + str(self.current_octave)
+        print(name)
         return name
 
     def figure_out_duration(self, note_length_code):
         return DURATIONS[note_length_code]
 
-    def figure_out_chord(self,chord_code,note):
+    def figure_out_chord(self, chord_code, note):
         note_height = self.scale_notes.index(note.name)
         chord_notes = []
         if note_height == 0:
@@ -224,29 +230,29 @@ class MusicGenerator():
 
         return new_chord
 
-    def create_note(self,note_name_val, note_length=LENGTHS.QUARTER.value):
+    def create_note(self, note_name_val, note_length=LENGTHS.QUARTER.value):
         note_name = self.figure_out_note(note_name_val)
         created_note = note.Note(note_name)
         created_note.duration.quarterLength = self.figure_out_duration(note_length)
         return created_note
 
     def get_note_length(index):
-        if index<len(DURATIONS):
+        if index < len(DURATIONS):
             return DURATIONS[index]
         return LENGTHS.EIGHTH.value
 
-    def get_note_of_scale(self,index):
+    def get_note_of_scale(self, index):
         return self.scale[index]
 
-    def append_to_stream(self,decoded_mask):
+    def append_to_stream(self, decoded_mask):
         new_note = self.create_note(decoded_mask[0], decoded_mask[1])
-        if self.current_chord is None or not self.notes_from_same_chord(self.prev_note,new_note):
-            new_chord = self.figure_out_chord(decoded_mask[2],new_note)
+        if self.current_chord is None or not self.notes_from_same_chord(self.prev_note, new_note):
+            new_chord = self.figure_out_chord(decoded_mask[2], new_note)
         else:
             if self.current_chord:
                 new_chord = self.current_chord
             else:
-                new_chord = self.figure_out_chord(decoded_mask[2],new_note)
+                new_chord = self.figure_out_chord(decoded_mask[2], new_note)
 
         new_chord.quarterLength = self.figure_out_duration(decoded_mask[1])
         self.part1.append(new_note)
@@ -254,7 +260,7 @@ class MusicGenerator():
         self.prev_note = new_note
         self.current_chord = new_chord
 
-    def notes_from_same_chord(self,prev_note,new_note):
+    def notes_from_same_chord(self, prev_note, new_note):
         if self.current_chord:
             if prev_note in self.current_chord and new_note in self.current_chord:
                 return True
@@ -263,10 +269,11 @@ class MusicGenerator():
         return False
 
     def finalize(self):
-        self.stream.insert(0,self.part1)
+        self.stream.insert(0, self.part1)
         self.stream.insert(0, self.part2)
 
         self.stream.show()
+
 
 def decode_mask(mask):
     '''mask in form:
@@ -279,44 +286,62 @@ def decode_mask(mask):
 
     return note_name_index, note_length, mystery_val
 
-def parse_matrix(music_generator,matrix):
+
+def parse_matrix(music_generator, matrix):
     if len(matrix) % 3 != 0 or len(matrix[0]) % 3 != 0:
         print("Matrix dimensions must be multiples of 3")
         return stream.Stream()
-    for i in range(0,len(matrix),3):
-        for j in range(0,len(matrix[i]),3):
-            val =[[str(matrix[i][j]),str(matrix[i][j+1]),str(matrix[i][j+2])],
-                  [str(matrix[i+1][j]),str(matrix[i+1][j+1]),str(matrix[i+1][j+2])],
-                  [str(matrix[i+2][j]),str(matrix[i+2][j+1]),str(matrix[i+2][j+2])]]
+    for i in range(0, len(matrix), 3):
+        for j in range(0, len(matrix[i]), 3):
+            val = [[str(matrix[i][j]), str(matrix[i][j + 1]), str(matrix[i][j + 2])],
+                   [str(matrix[i + 1][j]), str(matrix[i + 1][j + 1]), str(matrix[i + 1][j + 2])],
+                   [str(matrix[i + 2][j]), str(matrix[i + 2][j + 1]), str(matrix[i + 2][j + 2])]]
             decoded_mask = decode_mask(val)
-            print(decoded_mask)
+            # print(decoded_mask)
             music_generator.append_to_stream(decoded_mask)
 
     return music_generator
 
 
 if __name__ == '__main__':
-    # music21demo()
-    # print(binary_to_dec('111'))
+
+    scale = os.getenv('scale')
+
+    if scale is None:
+        scale = 'C_MAJOR'
+
+    scale = SCALES[scale]
+
+    octave = os.getenv('octave')
+
+    if octave is None:
+        octave = 4
+
+    is_pentatonic = os.getenv('is_pentatonic')
+
+    if is_pentatonic is None:
+        is_pentatonic = True
+
+    pentatonic = os.getenv('pentatonic')
+
+    if pentatonic is None:
+        pentatonic = 'major'
+
+    is_zelda = os.getenv('is_zelda')
+
+    if is_zelda is None:
+        is_zelda = False
 
     matrix_generator = MatrixGenerator((9, 9), 15, 0.5)
-    # matrix = [[1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 0, 1, 0, 0, 1, 1, 0, 1],
-    #           [0, 1, 1, 0, 1, 1, 0, 0, 1],
-    #           [0, 0, 0, 1, 1, 0, 0, 1, 1],
-    #           [1, 1, 0, 0, 1, 0, 0, 0, 1],
-    #           [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1],
-    #           [1, 1, 0, 0, 1, 1, 0, 0, 1]]
 
     matrices = matrix_generator.generate_GoF_matrices("2345/4")
 
-    music_generator = MusicGenerator()
+    music_generator = MusicGenerator(scale,
+                                     int(octave),
+                                     bool(is_pentatonic),
+                                     pentatonic,
+                                     bool(is_zelda))
 
     for m in matrices:
         parse_matrix(music_generator, m)
     music_generator.finalize()
-
-
-
