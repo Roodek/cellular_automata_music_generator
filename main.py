@@ -7,8 +7,8 @@ from music21 import *
 from MatrixGenerator import MatrixGenerator
 
 us = music21.environment.UserSettings()
-us['musicxmlPath'] = "D:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
-us['musescoreDirectPNGPath'] = "D:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
+us['musicxmlPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
+us['musescoreDirectPNGPath'] = "C:\\Program Files\\MuseScore 3\\bin\\MuseScore3.exe"
 
 DEFAULT_OCTAVE = 4
 
@@ -50,7 +50,7 @@ class LENGTHS(Enum):
     SIXTEENTH = 0.25
 
 
-DURATIONS = [4.0, 2.0, 1.0, 0.5, 0.25, 2.0, 1.0, 0.5, 0.25]
+DURATIONS = [4.0, 2.0, 1.0, 0.5, 0.25, 2.0, 1.0, 0.5, 1.0]
 
 
 def get_major_pentatonic_scale(scale_name):
@@ -61,10 +61,10 @@ def get_major_pentatonic_scale(scale_name):
     return pentatonic
 
 
-def get_zelda_scale(scale):
-    return [scale.value[1], scale.value[3],
-            scale.value[5], scale.value[7],
-            scale.value[1]]
+def get_zelda_scale():
+    return [SCALES.C_MAJOR.value[1], SCALES.C_MAJOR.value[3],
+            SCALES.C_MAJOR.value[5], SCALES.C_MAJOR.value[7],
+            SCALES.C_MAJOR.value[1]]
 
 
 def get_minor_pentatonic_scale(scale_name):
@@ -145,6 +145,7 @@ class MusicGenerator:
         self.scale = scale
         self.scale_notes = scale.value
         self.prev_note = None
+        self.sixteen_counter = 0
         self.current_chord = None
         self.is_pentatonic = is_pentatonic
         self.pentatonic = pentatonic
@@ -182,9 +183,9 @@ class MusicGenerator:
         self.stream.timeSignature = meter.TimeSignature('4/4')
 
     def figure_out_note(self, note_name_val):
-        if note_name_val >= len(self.scale_notes) - 1 or self.current_octave == 0:
+        if note_name_val >= len(self.scale_notes) - 1:
             self.current_octave = self.current_octave + 1
-        elif note_name_val == 0 or self.current_octave == 7:
+        elif note_name_val == 0:
             self.current_octave = self.current_octave - 1
 
         if self.is_zelda:
@@ -199,9 +200,21 @@ class MusicGenerator:
         else:
             name = self.scale_notes[note_name_val] + str(self.current_octave)
         print(name)
+
+        if self.current_octave <= 3:
+            self.current_octave = self.current_octave + 1
+
+        if self.current_octave >= 6:
+            self.current_octave = self.current_octave-1
+
         return name
 
     def figure_out_duration(self, note_length_code):
+        if self.prev_note is not None and self.prev_note.duration.quarterLength == 0.25 and self.sixteen_counter<3:
+            self.sixteen_counter += 1
+            return 0.25
+        else:
+            self.sixteen_counter = 0
         return DURATIONS[note_length_code]
 
     def figure_out_chord(self, chord_code, note):
@@ -236,11 +249,6 @@ class MusicGenerator:
         created_note.duration.quarterLength = self.figure_out_duration(note_length)
         return created_note
 
-    def get_note_length(index):
-        if index < len(DURATIONS):
-            return DURATIONS[index]
-        return LENGTHS.EIGHTH.value
-
     def get_note_of_scale(self, index):
         return self.scale[index]
 
@@ -254,7 +262,7 @@ class MusicGenerator:
             else:
                 new_chord = self.figure_out_chord(decoded_mask[2], new_note)
 
-        new_chord.quarterLength = self.figure_out_duration(decoded_mask[1])
+        new_chord.quarterLength = new_note.duration.quarterLength
         self.part1.append(new_note)
         self.part2.append(new_chord)
         self.prev_note = new_note
