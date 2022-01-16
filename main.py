@@ -50,7 +50,7 @@ class LENGTHS(Enum):
     SIXTEENTH = 0.25
 
 
-DURATIONS = [4.0, 2.0, 1.0, 0.5, 0.25, 2.0, 1.0, 0.5, 1.0]
+DURATIONS = [4.0, 2.0, 1.0, 0.5, 0.5, 2.0, 1.0, 0.25, 1.0]
 
 
 def get_major_pentatonic_scale(scale_name):
@@ -183,10 +183,11 @@ class MusicGenerator:
         self.stream.timeSignature = meter.TimeSignature('4/4')
 
     def figure_out_note(self, note_name_val):
-        if note_name_val >= len(self.scale_notes) - 1:
-            self.current_octave = self.current_octave + 1
-        elif note_name_val == 0:
-            self.current_octave = self.current_octave - 1
+
+        if note_name_val == len(self.scale_notes) - 1:
+            self.current_octave = min(self.current_octave + 1,6)
+        elif note_name_val == 0 or self.current_octave==6:
+            self.current_octave = max(self.current_octave - 1,3)
 
         if self.is_zelda:
             temp = get_zelda_scale(self.scale)
@@ -200,12 +201,6 @@ class MusicGenerator:
         else:
             name = self.scale_notes[note_name_val] + str(self.current_octave)
         print(name)
-
-        if self.current_octave <= 3:
-            self.current_octave = self.current_octave + 1
-
-        if self.current_octave >= 6:
-            self.current_octave = self.current_octave-1
 
         return name
 
